@@ -1,0 +1,77 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create a S3 upload bucket in the master account.
+
+Parameters:
+  OrganizationId:
+    Type: 'String'
+    Description: AWS Organization Id of the Landing Zone.
+  SSEAlgorithm:
+    Type: 'String'
+    Default: 'AES256'
+    Description: S3 bucket SSE Algorithm.
+    AllowedValues:
+    - 'AES256'
+Conditions:
+  UseAES256: !Equals
+    - !Ref SSEAlgorithm
+    - 'AES256'
+
+Resources:
+  # Create buckets using S3-SSE keys for default encryption
+  S3SharedBucket:
+    DeletionPolicy: Retain
+    Condition: UseAES256
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub aws-landing-zone-upload-${AWS::AccountId}-${AWS::Region}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: !Ref SSEAlgorithm
+  S3UploadBucketPolicy:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F16
+            reason: "We can allow * for the Principal as we are limiting access to the Org."
+    #It goes at the same level as Type: and Properties:, so directly under your resource.
+    Type: AWS::S3::BucketPolicy
+    Condition: UseAES256
+    Properties:
+      Bucket: !Ref S3SharedBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowOrganizationRead
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Sub "arn:aws:s3:::${S3SharedBucket}/*"
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref OrganizationId
+
+Outputs:
+  BucketName:
+    Description: AWS Landing Zone Shared bucket name
+    Value: !Ref S3SharedBucket
