@@ -26,7 +26,6 @@ Metadata:
           - AccountEmail
           - OrganizationalUnitName
           - AccountName
-          - StackName
           - StackRegion
           - SourceBucket
           - BaselineTemplate
@@ -114,6 +113,7 @@ Resources:
   TriggerAccountLambda:
     Type: "Custom::TriggerAccountLambda"
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !Ref MasterLambdaArn
       AccountEmail : !Ref AccountEmail

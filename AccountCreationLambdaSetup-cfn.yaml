@@ -47,7 +47,6 @@ Parameters:
 Resources:
   AccountBuilderLambda:
     Type: "AWS::Lambda::Function"
-    DependsOn: LambdaExecuteRole
     Properties:
       Handler: "AccountCreationLambda.main"
       Runtime: "python3.6"
@@ -230,7 +229,6 @@ Resources:
 
   ServiceCatalogLaunchConstraint:
     Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
-    DependsOn: ServiceCatalogLaunchRole
     Properties:
       Description: This is a launch constraint created for the account vending portfolio
       AcceptLanguage: en
@@ -262,8 +260,6 @@ Resources:
           - !Ref CloudCheckrApiKey
           - '"}'
       KmsKeyId: !GetAtt CloudCheckrApiKMSKey.Arn
-    DependsOn:
-      - CloudCheckrApiKMSKey
 
   CloudCheckrApiKMSKey:
     Type: 'AWS::KMS::Key'

@@ -36,6 +36,7 @@ Resources:
   # Create buckets using S3-SSE keys for default encryption
   S3SharedBucket:
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Condition: UseAES256
     Type: AWS::S3::Bucket
     Properties:
