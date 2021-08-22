@@ -26,6 +26,7 @@ Parameters:
     Type: String
     AllowedPattern: "[a-zA-Z][a-zA-Z0-9_-]*"
   CloudCheckrApiKey:
+    NoEcho: true
     Description: "Optional API Key to access CloudCheckr"
     Type: String
     AllowedPattern: ".+"
