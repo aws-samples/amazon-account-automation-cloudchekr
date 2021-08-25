@@ -13,66 +13,68 @@
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+---
 AWSTemplateFormatVersion: 2010-09-09
-Description: This template sets up the infrastructure required for an AWS Service Catalog based Account Vending Machine. (fdp-1pg158jfl)
+Description: This template sets up the infrastructure required for an AWS Service
+  Catalog based Account Vending Machine. (fdp-1pg158jfl)
 Parameters:
   UserRoleARN:
-    Description: "Enter the ARN of the IAM entity (role or user or group) that will be performing account creation from AWS Service Catalog"
+    Description: Enter the ARN of the IAM entity (role or user or group) that will
+      be performing account creation from AWS Service Catalog
     Type: String
-    AllowedPattern: ".+"
+    AllowedPattern: .+
   ArtifactBucketName:
-    Description: "S3 Bucket name where the Account Creation artifacts are stored (Lambda zip archive and account baseline)"
+    Description: S3 Bucket name where the Account Creation artifacts are stored (Lambda
+      zip archive and account baseline)
     Type: String
-    AllowedPattern: "[a-zA-Z][a-zA-Z0-9_-]*"
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_-]*'
   CloudCheckrApiKey:
     NoEcho: true
-    Description: "Optional API Key to access CloudCheckr"
+    Description: Optional API Key to access CloudCheckr
     Type: String
-    AllowedPattern: ".+"
-    Default: "None"
+    AllowedPattern: .+
+    Default: None
   AccountVendingMachineName:
-    Description: "The name of the Account Vending Machine in Service Catalog"
+    Description: The name of the Account Vending Machine in Service Catalog
     Type: String
-    Default: "Account Vending Machine"
+    Default: Account Vending Machine
   AccountVendingMachineSupportEmail:
-    Description: "An email to contact for support"
+    Description: An email to contact for support
     Type: String
-    AllowedPattern: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+    AllowedPattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$
   ServiceCatalogTag:
-    Description: "Value for the Service Catalog tag with key: 'Name'. Will associate tag with created vending machine product."
+    Description: 'Value for the Service Catalog tag with key: ''Name''. Will associate
+      tag with created vending machine product.'
     Type: String
-    Default: "Automation-reference-architecture"
-
+    Default: Automation-reference-architecture
 Resources:
   AccountBuilderLambda:
-    Type: "AWS::Lambda::Function"
+    Type: AWS::Lambda::Function
     Properties:
-      Handler: "AccountCreationLambda.main"
-      Runtime: "python3.6"
-      Role: !GetAtt LambdaExecuteRole.Arn
+      Handler: AccountCreationLambda.main
+      Runtime: python3.6
+      Role: !GetAtt 'LambdaExecuteRole.Arn'
       Timeout: 800
       TracingConfig:
-          Mode: "Active"
+        Mode: Active
       Code:
-        S3Bucket: !Ref ArtifactBucketName
-        S3Key: "AccountCreationLambda.zip"
-
+        S3Bucket: !Ref 'ArtifactBucketName'
+        S3Key: AccountCreationLambda.zip
   LambdaExecuteRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "lambda.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
+          Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: /
       ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: LambdaPolicy
           PolicyDocument:
@@ -82,114 +84,109 @@ Resources:
                 Effect: Allow
                 Action:
                   - sts:AssumeRole
-                Resource: 
-                  - 'arn:aws:iam::*:role/OrganizationAccountAccessRole'
+                Resource:
+                  - arn:aws:iam::*:role/OrganizationAccountAccessRole
               - Sid: S3Operations
                 Effect: Allow
                 Action:
-                  - 's3:GetObject'
-                  - 's3:ListBucketVersions'
-                  - 's3:ListBucket'
-                  - 's3:GetBucketAcl'
-                Resource: "*"
+                  - s3:GetObject
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
+                  - s3:GetBucketAcl
+                Resource: '*'
               - Sid: SecretsManagerOperations
                 Effect: Allow
                 Action:
-                  - 'secretsmanager:GetSecretValue'
+                  - secretsmanager:GetSecretValue
                 Resource:
-                  - !Ref Credentials
+                  - !Ref 'Credentials'
               - Sid: KMSOperations
                 Effect: Allow
                 Action:
-                  - 'kms:GenerateDataKey'
-                  - 'kms:Decrypt'
-                  - 'kms:DescribeKey'
+                  - kms:GenerateDataKey
+                  - kms:Decrypt
+                  - kms:DescribeKey
                 Resource:
-                  - !GetAtt CloudCheckrApiKMSKey.Arn
+                  - !GetAtt 'CloudCheckrApiKMSKey.Arn'
               - Sid: OrganizationOperations
                 Effect: Allow
                 Action:
-                  - 'organizations:ListRoots'
-                  - 'organizations:ListDelegatedServicesForAccount'
-                  - 'organizations:DescribeAccount'
-                  - 'organizations:ListChildren'
-                  - 'organizations:DescribeOrganization'
-                  - 'organizations:AttachPolicy'
-                  - 'organizations:MoveAccount'
-                  - 'organizations:DescribeHandshake'
-                  - 'organizations:ListAccountsForParent'
-                  - 'organizations:ListHandshakesForAccount'
-                  - 'organizations:ListOrganizationalUnitsForParent'
-                  - 'organizations:CreateAccount'
-                  - 'organizations:DescribePolicy'
-                  - 'organizations:TagResource'
-                  - 'organizations:ListCreateAccountStatus'
-                  - 'organizations:DescribeOrganizationalUnit'
-                  - 'organizations:DescribeCreateAccountStatus'
-                  - 'organizations:ListPoliciesForTarget'
-                  - 'organizations:DescribeEffectivePolicy'
-                  - 'organizations:ListTargetsForPolicy'
-                  - 'organizations:ListTagsForResource'
-                  - 'organizations:ListAWSServiceAccessForOrganization'
-                  - 'organizations:ListPolicies'
-                  - 'organizations:ListDelegatedAdministrators'
-                  - 'organizations:ListHandshakesForOrganization'
-                  - 'organizations:ListAccounts'
-                  - 'organizations:ListParents'
-                  - 'ec2:DescribeRegions'
-                  - 'ec2:DeleteVpc'
-                Resource: "*"
-
+                  - organizations:ListRoots
+                  - organizations:ListDelegatedServicesForAccount
+                  - organizations:DescribeAccount
+                  - organizations:ListChildren
+                  - organizations:DescribeOrganization
+                  - organizations:AttachPolicy
+                  - organizations:MoveAccount
+                  - organizations:DescribeHandshake
+                  - organizations:ListAccountsForParent
+                  - organizations:ListHandshakesForAccount
+                  - organizations:ListOrganizationalUnitsForParent
+                  - organizations:CreateAccount
+                  - organizations:DescribePolicy
+                  - organizations:TagResource
+                  - organizations:ListCreateAccountStatus
+                  - organizations:DescribeOrganizationalUnit
+                  - organizations:DescribeCreateAccountStatus
+                  - organizations:ListPoliciesForTarget
+                  - organizations:DescribeEffectivePolicy
+                  - organizations:ListTargetsForPolicy
+                  - organizations:ListTagsForResource
+                  - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:ListPolicies
+                  - organizations:ListDelegatedAdministrators
+                  - organizations:ListHandshakesForOrganization
+                  - organizations:ListAccounts
+                  - organizations:ListParents
+                  - ec2:DescribeRegions
+                  - ec2:DeleteVpc
+                Resource: '*'
   AccountVendingPortfolio:
-    Type: "AWS::ServiceCatalog::Portfolio"
+    Type: AWS::ServiceCatalog::Portfolio
     Properties:
-      DisplayName: !Ref AccountVendingMachineName
-      AcceptLanguage: "en"
-      ProviderName: "AWS"
-
+      DisplayName: !Ref 'AccountVendingMachineName'
+      AcceptLanguage: en
+      ProviderName: AWS
   AccountVendingMachineProduct:
-    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      AcceptLanguage: "en"
-      Description: "This product is an account vending machine builds a new account"
-      Distributor: "Amazon"
-      Name: !Ref AccountVendingMachineName
-      Owner: "AWS"
-      SupportEmail: !Ref AccountVendingMachineSupportEmail
-      SupportUrl: "https://www.amazon.com"
-      SupportDescription: "Support Description"
+      AcceptLanguage: en
+      Description: This product is an account vending machine builds a new account
+      Distributor: Amazon
+      Name: !Ref 'AccountVendingMachineName'
+      Owner: AWS
+      SupportEmail: !Ref 'AccountVendingMachineSupportEmail'
+      SupportUrl: https://www.amazon.com
+      SupportDescription: Support Description
       ProvisioningArtifactParameters:
-        - Description: "May 2020"
-          Name: "May 2020 v1.0"
+        - Description: May 2020
+          Name: May 2020 v1.0
           Info:
-            LoadTemplateFromURL : !Sub "https://${ArtifactBucketName}.s3.${AWS::Region}.amazonaws.com/accountbuilder.yml"
-
+            LoadTemplateFromURL: !Sub 'https://${ArtifactBucketName}.s3.${AWS::Region}.amazonaws.com/accountbuilder.yml'
   AVMAssociation:
-    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
     Properties:
-      ProductId: !Ref AccountVendingMachineProduct
-      PortfolioId: !Ref AccountVendingPortfolio
-
+      ProductId: !Ref 'AccountVendingMachineProduct'
+      PortfolioId: !Ref 'AccountVendingPortfolio'
   PortfolioPrincipalAssociation:
-    Type: "AWS::ServiceCatalog::PortfolioPrincipalAssociation"
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
     Properties:
-      PrincipalARN: !Ref UserRoleARN
-      PortfolioId: !Ref AccountVendingPortfolio
+      PrincipalARN: !Ref 'UserRoleARN'
+      PortfolioId: !Ref 'AccountVendingPortfolio'
       PrincipalType: IAM
-
   ServiceCatalogLaunchRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "servicecatalog.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
+          Effect: Allow
+          Principal:
+            Service:
+              - servicecatalog.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: /
       Policies:
         - PolicyName: ServiceCatalogPolicy
           PolicyDocument:
@@ -198,111 +195,100 @@ Resources:
               - Sid: CloudFormationOperations
                 Effect: Allow
                 Action:
-                  - 'cloudformation:CancelUpdateStack'
-                  - 'cloudformation:UpdateTerminationProtection'
-                  - 'cloudformation:CreateChangeSet'
-                  - 'cloudformation:DeleteChangeSet'
-                  - 'cloudformation:GetTemplateSummary'
-                  - 'cloudformation:CreateStack'
-                  - 'cloudformation:DeleteStack'
-                  - 'cloudformation:UpdateStack'
-                  - 'cloudformation:DescribeStacks'
-                  - 'cloudformation:DescribeStackEvents'
-                Resource: "*"
+                  - cloudformation:CancelUpdateStack
+                  - cloudformation:UpdateTerminationProtection
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                Resource: '*'
               - Sid: S3Operations
                 Effect: Allow
                 Action:
-                  - 's3:GetObject'
-                  - 's3:ListBucketVersions'
-                  - 's3:ListBucket'
-                  - 's3:GetBucketAcl'
-                  - 's3:ListAllMyBuckets'
-                  - 's3:GetBucketLocation'
-                Resource: "*"
+                  - s3:GetObject
+                  - s3:ListBucketVersions
+                  - s3:ListBucket
+                  - s3:GetBucketAcl
+                  - s3:ListAllMyBuckets
+                  - s3:GetBucketLocation
+                Resource: '*'
               - Sid: LambdaInvocation
                 Effect: Allow
                 Action:
-                  - 'lambda:InvokeFunction'
-                  - 'lambda:InvokeAsync'
-                Resource: 
-                  - !GetAtt AccountBuilderLambda.Arn
-
+                  - lambda:InvokeFunction
+                  - lambda:InvokeAsync
+                Resource:
+                  - !GetAtt 'AccountBuilderLambda.Arn'
   ServiceCatalogLaunchConstraint:
-    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
     Properties:
       Description: This is a launch constraint created for the account vending portfolio
       AcceptLanguage: en
-      PortfolioId: !Ref AccountVendingPortfolio
-      ProductId: !Ref AccountVendingMachineProduct
-      RoleArn: !GetAtt ServiceCatalogLaunchRole.Arn
-
+      PortfolioId: !Ref 'AccountVendingPortfolio'
+      ProductId: !Ref 'AccountVendingMachineProduct'
+      RoleArn: !GetAtt 'ServiceCatalogLaunchRole.Arn'
   ServiceCatalogTagOption:
-    Type: "AWS::ServiceCatalog::TagOption"
+    Type: AWS::ServiceCatalog::TagOption
     Properties:
       Active: true
-      Value: !Ref ServiceCatalogTag
-      Key: "Name"
-
+      Value: !Ref 'ServiceCatalogTag'
+      Key: Name
   ServiceCatalogTagOptionAssociation:
-    Type: "AWS::ServiceCatalog::TagOptionAssociation"
+    Type: AWS::ServiceCatalog::TagOptionAssociation
     Properties:
-      TagOptionId: !Ref ServiceCatalogTagOption
-      ResourceId: !Ref AccountVendingPortfolio
-
+      TagOptionId: !Ref 'ServiceCatalogTagOption'
+      ResourceId: !Ref 'AccountVendingPortfolio'
   Credentials:
-    Type: 'AWS::SecretsManager::Secret'
+    Type: AWS::SecretsManager::Secret
     Properties:
       Description: CloudCheckr API Key
-      Name: "CloudCheckrApiKeySecret"
-      SecretString: !Join 
-        - ''
-        - - '{"AdminApiKey":"'
-          - !Ref CloudCheckrApiKey
-          - '"}'
-      KmsKeyId: !GetAtt CloudCheckrApiKMSKey.Arn
-
+      Name: CloudCheckrApiKeySecret
+      SecretString: !Sub '{"AdminApiKey":"${CloudCheckrApiKey}"}'
+      KmsKeyId: !GetAtt 'CloudCheckrApiKMSKey.Arn'
   CloudCheckrApiKMSKey:
-    Type: 'AWS::KMS::Key'
+    Type: AWS::KMS::Key
     Properties:
       Description: KMS Key used to encrypt/decrypt the CloudCheckr Api Key
       EnableKeyRotation: true
       KeyPolicy:
         Version: '2012-10-17'
         Statement:
-        - Sid: KMSAdminOperations
-          Effect: Allow
-          Principal:
-            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Action:
-            - kms:*
-          Resource: '*'
-        - Sid: KMSOperations
-          Effect: Allow
-          Principal:
-            AWS: !Sub '${AWS::AccountId}'
-          Action:
-            - kms:Encrypt
-            - kms:Decrypt
-            - kms:ReEncrypt*
-            - kms:GenerateDataKey*
-            - kms:CreateGrant
-            - kms:DescribeKey
-          Resource: '*'
-          Condition:
-            StringEquals:
-              kms:ViaService: !Sub 'secretsmanager.${AWS::Region}.amazonaws.com'
-              kms:CallerAccount: !Sub '${AWS::AccountId}'
+          - Sid: KMSAdminOperations
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - kms:*
+            Resource: '*'
+          - Sid: KMSOperations
+            Effect: Allow
+            Principal:
+              AWS: !Sub '${AWS::AccountId}'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:CreateGrant
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:ViaService: !Sub 'secretsmanager.${AWS::Region}.amazonaws.com'
+                kms:CallerAccount: !Sub '${AWS::AccountId}'
   CloudCheckrApiKMSAlias:
-    Type: 'AWS::KMS::Alias'
+    Type: AWS::KMS::Alias
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
-      TargetKeyId:
-        Ref: CloudCheckrApiKMSKey
-
+      TargetKeyId: !Ref 'CloudCheckrApiKMSKey'
 Outputs:
   AccountLambda:
     Description: ARN of the account creation lambda function
-    Value: !GetAtt AccountBuilderLambda.Arn
+    Value: !GetAtt 'AccountBuilderLambda.Arn'
   SecretsARN:
     Description: ARN of the secrets having API
-    Value: !Ref Credentials
+    Value: !Ref 'Credentials'
