@@ -90,18 +90,18 @@ Parameters:
     Type: String
     Default: Invoicing
   SkipCloudCheckr:
-    Description: Non false to skip cloud checker functionality
+    Description: Enter true to skip cloudcheckr functionality
     AllowedValues:
       - true
       - false
     Type: String
     Default: false
   CloudCheckrApiSecret:
-    Description: ARN of the secret where API key for accessing Cloud Checker is stored
+    Description: ARN of the secret where API key for accessing CloudCheckr is stored
     Type: String
     Default: CloudCheckrApiKeySecret
   CloudTrailBucket:
-    Description: Cloud Checker Cloud Trail Bucket
+    Description: CloudCheckr Cloud Trail Bucket
     Type: String
     Default: cloudtrailbucket-<Account-id>
   CurBucket:
@@ -133,7 +133,7 @@ Resources:
       BaselineTemplate: !Ref 'BaselineTemplate'
       AccountBilling: !Ref 'AccountBilling'
       CloudCheckrApiSecret: !Ref 'CloudCheckrApiSecret'
-      CCStackName: avm-cloudchecker-stack
+      CCStackName: avm-cloudcheckr-stack
       CloudTrailBucket: !Ref 'CloudTrailBucket'
       CurBucket: !Ref 'CurBucket'
       DbrBucket: !Ref 'DbrBucket'
