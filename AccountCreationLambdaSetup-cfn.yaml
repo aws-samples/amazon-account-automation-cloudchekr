@@ -49,6 +49,7 @@ Parameters:
     Default: Automation-reference-architecture
 Resources:
   AccountBuilderLambda:
+    DependsOn: AccountBuilderLambdaLogGroup
     Type: AWS::Lambda::Function
     Properties:
       Handler: AccountCreationLambda.main
@@ -74,7 +75,7 @@ Resources:
             - sts:AssumeRole
       Path: /
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: LambdaPolicy
           PolicyDocument:
@@ -85,7 +86,7 @@ Resources:
                 Action:
                   - sts:AssumeRole
                 Resource:
-                  - arn:aws:iam::*:role/OrganizationAccountAccessRole
+                  - arn:${AWS::Partition}:iam::*:role/OrganizationAccountAccessRole
               - Sid: S3Operations
                 Effect: Allow
                 Action:
@@ -141,6 +142,11 @@ Resources:
                   - ec2:DescribeRegions
                   - ec2:DeleteVpc
                 Resource: '*'
+  AccountBuilderLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AccountBuilderLambda}
+      RetentionInDays: 7
   AccountVendingPortfolio:
     Type: AWS::ServiceCatalog::Portfolio
     Properties:
@@ -151,7 +157,7 @@ Resources:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
       AcceptLanguage: en
-      Description: This product is an account vending machine builds a new account
+      Description: This product is an account vending machine for deploying a new account
       Distributor: Amazon
       Name: !Ref 'AccountVendingMachineName'
       Owner: AWS
@@ -260,7 +266,7 @@ Resources:
           - Sid: KMSAdminOperations
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
             Action:
               - kms:*
             Resource: '*'

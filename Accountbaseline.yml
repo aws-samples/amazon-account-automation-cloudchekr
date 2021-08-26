@@ -66,11 +66,12 @@ Resources:
             Action:
               - s3:GetObject
             Resource:
-              - !Sub 'arn:aws:s3:::${S3SharedBucket}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${S3SharedBucket}/*'
             Condition:
               StringEquals:
                 aws:PrincipalOrgID: !Ref 'OrganizationId'
 Outputs:
   BucketName:
+    Condition: UseAES256
     Description: AWS Landing Zone Shared bucket name
     Value: !Ref 'S3SharedBucket'
