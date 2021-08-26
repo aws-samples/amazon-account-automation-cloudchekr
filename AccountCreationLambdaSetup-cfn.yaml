@@ -145,7 +145,7 @@ Resources:
   AccountBuilderLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${AccountBuilderLambda}
+      LogGroupName: !Sub /aws/lambda/AccountBuilderLambda
       RetentionInDays: 7
   AccountVendingPortfolio:
     Type: AWS::ServiceCatalog::Portfolio
