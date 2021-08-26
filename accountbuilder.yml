@@ -120,6 +120,8 @@ Parameters:
 Resources:
   TriggerAccountLambda:
     Type: Custom::TriggerAccountLambda
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !Ref 'MasterLambdaArn'
       AccountEmail: !Ref 'AccountEmail'
