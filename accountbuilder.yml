@@ -90,7 +90,7 @@ Parameters:
     Type: String
     Default: Invoicing
   SkipCloudCheckr:
-    Description: Enter true to skip cloudcheckr functionality
+    Description: Enter true to skip CloudCheckr functionality
     AllowedValues:
       - true
       - false
